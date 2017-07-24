@@ -1,0 +1,431 @@
+options:
+  android:
+    title: Path to the gradle file to use
+    env_key: GRADLE_BUILD_FILE_PATH
+    value_map:
+      _:
+        title: Gradlew file path
+        env_key: GRADLEW_PATH
+        value_map:
+          _:
+            config: default-android-config
+  cordova:
+    title: Directory of Cordova Config.xml
+    env_key: CORDOVA_WORK_DIR
+    value_map:
+      _:
+        title: Platform to use in cordova-cli commands
+        env_key: CORDOVA_PLATFORM
+        value_map:
+          android:
+            config: default-cordova-config
+          ios:
+            config: default-cordova-config
+          ios,android:
+            config: default-cordova-config
+  fastlane:
+    title: Working directory
+    env_key: FASTLANE_WORK_DIR
+    value_map:
+      _:
+        title: Fastlane lane
+        env_key: FASTLANE_LANE
+        value_map:
+          _:
+            config: default-fastlane-config
+  ionic:
+    title: Directory of Ionic Config.xml
+    env_key: IONIC_WORK_DIR
+    value_map:
+      _:
+        title: Platform to use in ionic-cli commands
+        env_key: IONIC_PLATFORM
+        value_map:
+          android:
+            config: default-ionic-config
+          ios:
+            config: default-ionic-config
+          ios,android:
+            config: default-ionic-config
+  ios:
+    title: Project (or Workspace) path
+    env_key: BITRISE_PROJECT_PATH
+    value_map:
+      _:
+        title: Scheme name
+        env_key: BITRISE_SCHEME
+        value_map:
+          _:
+            config: default-ios-config
+  macos:
+    title: Project (or Workspace) path
+    env_key: BITRISE_PROJECT_PATH
+    value_map:
+      _:
+        title: Scheme name
+        env_key: BITRISE_SCHEME
+        value_map:
+          _:
+            config: default-macos-config
+  react-native:
+    title: Path to the gradle file to use
+    env_key: GRADLE_BUILD_FILE_PATH
+    value_map:
+      _:
+        title: Gradlew file path
+        env_key: GRADLEW_PATH
+        value_map:
+          _:
+            title: Project (or Workspace) path
+            env_key: BITRISE_PROJECT_PATH
+            value_map:
+              _:
+                title: Scheme name
+                env_key: BITRISE_SCHEME
+  xamarin:
+    title: Path to the Xamarin Solution file
+    env_key: BITRISE_PROJECT_PATH
+    value_map:
+      _:
+        title: Xamarin solution configuration
+        env_key: BITRISE_XAMARIN_CONFIGURATION
+        value_map:
+          _:
+            title: Xamarin solution platform
+            env_key: BITRISE_XAMARIN_PLATFORM
+            value_map:
+              _:
+                config: default-xamarin-config
+configs:
+  android:
+    default-android-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: android
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        deploy:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - cache-pull@1.0.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - install-missing-android-tools@1.0.3: {}
+          - gradle-runner@1.7.1:
+              inputs:
+              - gradle_file: $GRADLE_BUILD_FILE_PATH
+              - gradle_task: assembleRelease
+              - gradlew_path: $GRADLEW_PATH
+          - deploy-to-bitrise-io@1.3.5: {}
+          - cache-push@1.1.1: {}
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - cache-pull@1.0.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - install-missing-android-tools@1.0.3: {}
+          - gradle-runner@1.7.1:
+              inputs:
+              - gradle_file: $GRADLE_BUILD_FILE_PATH
+              - gradle_task: assembleDebug
+              - gradlew_path: $GRADLEW_PATH
+          - deploy-to-bitrise-io@1.3.5: {}
+          - cache-push@1.1.1: {}
+  cordova:
+    default-cordova-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: cordova
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - npm@0.9.0:
+              inputs:
+              - command: install
+              - workdir: $CORDOVA_WORK_DIR
+          - generate-cordova-build-configuration@0.9.3: {}
+          - cordova-archive@0.9.2:
+              inputs:
+              - workdir: $CORDOVA_WORK_DIR
+              - platform: $CORDOVA_PLATFORM
+              - target: emulator
+          - deploy-to-bitrise-io@1.3.5: {}
+  fastlane:
+    default-fastlane-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: fastlane
+      app:
+        envs:
+        - FASTLANE_XCODE_LIST_TIMEOUT: "120"
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - fastlane@2.3.9:
+              inputs:
+              - lane: $FASTLANE_LANE
+              - work_dir: $FASTLANE_WORK_DIR
+          - deploy-to-bitrise-io@1.3.5: {}
+  ionic:
+    default-ionic-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: ionic
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - npm@0.9.0:
+              inputs:
+              - command: install
+              - workdir: $IONIC_WORK_DIR
+          - generate-cordova-build-configuration@0.9.3: {}
+          - ionic-archive@0.9.3:
+              inputs:
+              - workdir: $IONIC_WORK_DIR
+              - platform: $IONIC_PLATFORM
+              - target: emulator
+          - deploy-to-bitrise-io@1.3.5: {}
+  ios:
+    default-ios-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: ios
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        deploy:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - cache-pull@1.0.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - recreate-user-schemes@1.0.1:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+          - cocoapods-install@1.7.1: {}
+          - xcode-test@1.18.5:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+          - xcode-archive@2.0.6:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+          - deploy-to-bitrise-io@1.3.5: {}
+          - cache-push@1.1.1: {}
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - cache-pull@1.0.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - recreate-user-schemes@1.0.1:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+          - cocoapods-install@1.7.1: {}
+          - xcode-test@1.18.5:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+          - deploy-to-bitrise-io@1.3.5: {}
+          - cache-push@1.1.1: {}
+  macos:
+    default-macos-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: macos
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        deploy:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - cache-pull@1.0.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - recreate-user-schemes@1.0.1:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+          - cocoapods-install@1.7.1: {}
+          - xcode-test-mac@1.1.0:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+          - xcode-archive-mac@1.4.1:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+          - deploy-to-bitrise-io@1.3.5: {}
+          - cache-push@1.1.1: {}
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - cache-pull@1.0.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - recreate-user-schemes@1.0.1:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+          - cocoapods-install@1.7.1: {}
+          - xcode-test-mac@1.1.0:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+          - deploy-to-bitrise-io@1.3.5: {}
+          - cache-push@1.1.1: {}
+  other:
+    other-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: other
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - deploy-to-bitrise-io@1.3.5: {}
+  react-native:
+    reactnative-android-ios-test-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: react-native
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        deploy:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - npm@0.9.0:
+              inputs:
+              - command: install
+          - install-missing-android-tools@1.0.3: {}
+          - gradle-runner@1.7.1:
+              inputs:
+              - gradle_file: $GRADLE_BUILD_FILE_PATH
+              - gradle_task: assembleRelease
+              - gradlew_path: $GRADLEW_PATH
+          - certificate-and-profile-installer@1.8.6: {}
+          - xcode-archive@2.0.6:
+              inputs:
+              - project_path: $BITRISE_PROJECT_PATH
+              - scheme: $BITRISE_SCHEME
+              - configuration: release
+          - deploy-to-bitrise-io@1.3.5: {}
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - npm@0.9.0:
+              inputs:
+              - command: install
+          - npm@0.9.0:
+              inputs:
+              - command: test
+          - deploy-to-bitrise-io@1.3.5: {}
+  xamarin:
+    default-xamarin-config: |
+      format_version: "3"
+      default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+      project_type: xamarin
+      trigger_map:
+      - push_branch: '*'
+        workflow: primary
+      - pull_request_source_branch: '*'
+        workflow: primary
+      workflows:
+        primary:
+          steps:
+          - activate-ssh-key@3.1.1:
+              run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+          - git-clone@3.5.0: {}
+          - script@1.1.4:
+              title: Do anything with Script step
+          - certificate-and-profile-installer@1.8.6: {}
+          - xamarin-user-management@1.1.0:
+              run_if: .IsCI
+          - nuget-restore@1.0.4: {}
+          - xamarin-components-restore@0.9.0: {}
+          - xamarin-archive@1.4.2:
+              inputs:
+              - xamarin_solution: $BITRISE_PROJECT_PATH
+              - xamarin_configuration: $BITRISE_XAMARIN_CONFIGURATION
+              - xamarin_platform: $BITRISE_XAMARIN_PLATFORM
+          - deploy-to-bitrise-io@1.3.5: {}
